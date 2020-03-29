@@ -511,11 +511,8 @@ tt ← succeeds $ unify trans_inst coe_fn_inst transparency.reducible | pure non
 set_bool_option `pp.all true,
 trans_inst_1 ← pp trans_inst_1,
 trans_inst_2 ← pp trans_inst_2,
-coe_fn_inst ← pp coe_fn_inst,
 pure $ format.to_string $
-  "`has_coe_to_fun` instance is definitionally equal to a transitive instance: " ++
-  coe_fn_inst.group.indent 2 ++
-  format.line ++ "transitive instance is composed of:" ++
+  "`has_coe_to_fun` instance is definitionally equal to a transitive instance composed of: " ++
   trans_inst_1.group.indent 2 ++
   format.line ++ "and" ++
   trans_inst_2.group.indent 2
