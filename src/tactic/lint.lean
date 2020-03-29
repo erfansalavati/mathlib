@@ -521,7 +521,9 @@ pure $ format.to_string $
 @[linter, priority 1401] meta def linter.has_coe_to_fun : linter :=
 { test := has_coe_to_fun_linter,
   no_errors_found := "has_coe_to_fun is used correctly",
-  errors_found := "INVALID/MISSING `has_coe_to_fun` instances.  See Note [function coercions]." }
+  errors_found := "INVALID/MISSING `has_coe_to_fun` instances.
+You should add a `has_coe_to_fun` instance for the following types.
+See Note [function coercions]." }
 
 /-- Checks whether a declaration is prop-valued and takes an `inhabited _` argument that is unused
 elsewhere in the type. In this case, that argument can be replaced with `nonempty _`. -/
