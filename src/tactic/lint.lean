@@ -496,6 +496,36 @@ meta def has_coe_variable (d : declaration) : tactic (option string) := do
   errors_found := "INVALID `has_coe` INSTANCES.
 Make the following declarations instances of the class `has_coe_t` instead of `has_coe`." }
 
+private meta def has_coe_to_fun_linter (d : declaration) : tactic (option string) :=
+retrieve $ do
+reset_instance_cache,
+mk_meta_var d.type >>= set_goals ∘ pure,
+args ← intros,
+expr.sort _ ← target | pure none,
+let ty : expr := (expr.const d.to_name d.univ_levels).mk_app args,
+some coe_fn_inst ←
+  try_core $ to_expr ``(_root_.has_coe_to_fun %%ty) >>= mk_instance | pure none,
+some trans_inst@(expr.app (expr.app _ trans_inst_1) trans_inst_2) ←
+  try_core $ to_expr ``(@_root_.coe_fn_trans %%ty _ _ _) | pure none,
+tt ← succeeds $ unify trans_inst coe_fn_inst transparency.reducible | pure none,
+set_bool_option `pp.all true,
+trans_inst_1 ← pp trans_inst_1,
+trans_inst_2 ← pp trans_inst_2,
+coe_fn_inst ← pp coe_fn_inst,
+pure $ format.to_string $
+  "`has_coe_to_fun` instance is definitionally equal to a transitive instance: " ++
+  coe_fn_inst.group.indent 2 ++
+  format.line ++ "transitive instance is composed of:" ++
+  trans_inst_1.group.indent 2 ++
+  format.line ++ "and" ++
+  trans_inst_2.group.indent 2
+
+/-- Linter that checks whether `has_coe_to_fun` instances comply with Note [function coercions]. -/
+@[linter, priority 1401] meta def linter.has_coe_to_fun : linter :=
+{ test := has_coe_to_fun_linter,
+  no_errors_found := "has_coe_to_fun is used correctly",
+  errors_found := "INVALID/MISSING `has_coe_to_fun` instances.  See Note [function coercions]." }
+
 /-- Checks whether a declaration is prop-valued and takes an `inhabited _` argument that is unused
 elsewhere in the type. In this case, that argument can be replaced with `nonempty _`. -/
 meta def inhabited_nonempty (d : declaration) : tactic (option string) :=
@@ -902,6 +932,7 @@ The following linters are run by default:
 14. `simp_nf` checks that the left-hand side of simp lemmas is in simp-normal form.
 15. `simp_var_head` checks that there are no variables as head symbol of left-hand sides of simp lemmas.
 16. `simp_comm` checks that no commutativity lemmas (such as `add_comm`) are marked simp.
+17. `has_coe_to_fun` checks that every type that coerces to a function has a direct `has_coe_to_fun` instance.
 
 Another linter, `doc_blame_thm`, checks for missing doc strings on lemmas and theorems.
 This is not run by default.
